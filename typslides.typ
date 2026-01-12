@@ -341,17 +341,19 @@
   set text(size: text-size)
   show linebreak: none
 
-  let sections = query(<section>)
+  // Deduplication is done to prevent natural page breaking causing multiplied
+  // outline entries.
+  let sections = query(<section>).dedup()
 
   if sections.len() == 0 {
-    let subsections = query(<subsection>)
+    let subsections = query(<subsection>).dedup()
     pad(enum(..subsections.map(sub => [#link(sub.location(), sub.value) <toc>])))
   } else {
     pad(enum(..sections.map(section => {
       let section-loc = section.location()
       let subsections = query(
         selector(<subsection>).after(section-loc).before(selector(<section>).after(section-loc, inclusive: false)),
-      )
+      ).dedup()
 
       if subsections.len() != 0 {
         [#link(section-loc, section.value) <toc> #list(
