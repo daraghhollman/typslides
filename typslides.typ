@@ -34,8 +34,8 @@
 //   theme: Color theme name from palette or custom RGB (default: "bluey")
 //   font: Font family for presentation text (default: "Fira Sans")
 //   font-size: Base font size for slide content (default: 21pt)
-//   link-style:  Hyperlink styling - "color", "underline", or "both" (default: "color")
-//   show-page-numbers:  Display page numbers in footers (default: true)
+//   link-style: Hyperlink styling - "color", "underline", or "both" (default: "color")
+//   show-page-numbers: Display page numbers in footers (default: true)
 //   show-progress: Enable Beamer-style progress bar at bottom (default: false)
 //   progress-height: Height of the progress bar (default: 3pt)
 //   back-color: Default background color for all slides (default: white)
@@ -188,7 +188,7 @@
 //
 // Arguments:
 //   columns: Array of column widths (default: equal width for all)
-//   gutter:  Spacing between columns (default: 1em)
+//   gutter: Spacing between columns (default: 1em)
 //   bodies: Variable number of content blocks, one per column
 //
 // Returns:  A grid layout with the specified columns
@@ -359,8 +359,6 @@
   set text(size: text-size)
   show linebreak: none
   
-  // Deduplication is done to prevent natural page breaking causing multiplied
-  // outline entries. 
   let sections = query(<section>).dedup()
   
   if sections.len() == 0 {
@@ -557,7 +555,7 @@
 // Displays citations from a .bib file with a progress divider
 //
 // Arguments: 
-//   bib-call:  The bibliography() function call with your . bib file
+//   bib-call: The bibliography() function call with your .bib file
 //   title: Title for the references section (default: "References")
 //   back-color: Background color for the slide (default: global default)
 //
