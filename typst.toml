@@ -1,8 +1,8 @@
 [package]
 name = "typslides"
-version = "1.3.0"
+version = "1.3.2"
 entrypoint = "lib.typ"
-compiler = "0.14.0"
+compiler = "0.14.2"
 authors = ["Antonio Manjavacas <https://github.com/manjavacas>"]
 license = "GPL-3.0-or-later"
 description = "Minimalistic Typst slides."
