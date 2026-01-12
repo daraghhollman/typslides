@@ -7,6 +7,9 @@
 // Stores the current theme color (either from palette or custom RGB)
 #let theme-color = state("theme-color", none)
 
+// Stores the default background color for all slides
+#let default-back-color = state("default-back-color", white)
+
 // Tracks all sections for table of contents generation
 #let sections = state("sections", ())
 
@@ -27,7 +30,7 @@
 // Configures global settings including theme, typography, and layout
 //
 // Arguments:
-//   ratio: Slide aspect ratio (default: "16-9")
+//   ratio:  Slide aspect ratio (default: "16-9")
 //   theme: Color theme name from palette or custom RGB (default: "bluey")
 //   font: Font family for presentation text (default: "Fira Sans")
 //   font-size: Base font size for slide content (default: 21pt)
@@ -35,6 +38,7 @@
 //   show-page-numbers: Display page numbers in footers (default: true)
 //   show-progress: Enable Beamer-style progress bar at bottom (default: false)
 //   progress-height: Height of the progress bar (default: 3pt)
+//   back-color: Default background color for all slides (default: white)
 //   body: The presentation content
 //
 // Returns: Configured presentation with all styling applied
@@ -47,27 +51,29 @@
   show-page-numbers: true,
   show-progress: false,
   progress-height: 3pt,
+  back-color: white,
   body,
 ) = {
   page-numbers.update(show-page-numbers)
   progress-enabled.update(show-progress)
   progress-thickness.update(progress-height)
-
+  default-back-color.update(back-color)
+  
   if type(theme) == str {
     theme-color.update(_theme-colors.at(theme))
   } else {
     theme-color.update(theme)
   }
-
+  
   set text(font: font, size: font-size)
-  set page(paper: "presentation-" + ratio, fill: white)
-
+  set page(paper: "presentation-" + ratio, fill: back-color)
+  
   show ref: it => (
     context {
       text(fill: theme-color.get())[#it]
     }
   )
-
+  
   show link: it => (
     context {
       if it.has("label") {
@@ -81,15 +87,15 @@
       }
     }
   )
-
+  
   show footnote: it => (
     context {
       text(fill: theme-color.get())[#it]
     }
   )
-
+  
   set enum(numbering: (it => context text(fill: black)[*#it.*]))
-
+  
   body
 }
 
@@ -142,10 +148,10 @@
     above: .7cm,
     below: .7cm,
   )
-
+  
   let default-back = if title != none { white } else { rgb("FBF7EE") }
   let fill-color = if back-color != none { back-color } else { default-back }
-
+  
   if title != none {
     set block(width: 100%)
     stack(
@@ -185,20 +191,20 @@
 //   gutter: Spacing between columns (default: 1em)
 //   bodies: Variable number of content blocks, one per column
 //
-// Returns: A grid layout with the specified columns
+// Returns:  A grid layout with the specified columns
 #let cols(columns: none, gutter: 1em, ..bodies) = {
   let bodies = bodies.pos()
-
+  
   let columns = if columns == none {
     (1fr,) * bodies.len()
   } else {
     columns
   }
-
+  
   if columns.len() != bodies.len() {
     panic("Number of columns must match number of content arguments")
   }
-
+  
   grid(columns: columns, gutter: gutter, ..bodies)
 }
 
@@ -300,6 +306,7 @@
 //   subtitle: Optional subtitle
 //   authors: Author name(s)
 //   info: Additional information (dates, links, etc.)
+//   back-color: Background color for the slide (default: global default)
 //
 // Returns: Formatted front slide
 #let front-slide(
@@ -307,7 +314,12 @@
   subtitle: none,
   authors: none,
   info: none,
+  back-color: none,
 ) = context {
+  let bg-color = if back-color != none { back-color } else { default-back-color.get() }
+  
+  set page(fill: bg-color)
+  
   _make-frontpage(
     title,
     subtitle,
@@ -320,31 +332,35 @@
 //************************************************************************\\
 
 // Generates a table of contents from registered sections
-// Automatically builds outline from title-slide and slide(outlined: true) entries
+// Automatically builds outline from title-slide and slide(outlined:  true) entries
 // Uses a progress divider to show position in presentation
 //
 // Arguments:
 //   title: Title for the outline slide (default: "Contents")
 //   text-size: Font size for outline items (default: 23pt)
+//   back-color: Background color for the slide (default: global default)
 //
 // Returns: A formatted table of contents with clickable links
 #let table-of-contents(
   title: "Contents",
   text-size: 23pt,
+  back-color: none,
 ) = context {
+  let bg-color = if back-color != none { back-color } else { default-back-color.get() }
+  
+  set page(fill: bg-color)
+  
   text(size: 42pt, weight: "bold")[
     #smallcaps(title)
     #v(-.9cm)
     #_progress-divider(color: theme-color.get())
   ]
-
+  
   set text(size: text-size)
   show linebreak: none
-
-  // Deduplication is done to prevent natural page breaking causing multiplied
-  // outline entries.
+  
   let sections = query(<section>).dedup()
-
+  
   if sections.len() == 0 {
     let subsections = query(<subsection>).dedup()
     pad(enum(..subsections.map(sub => [#link(sub.location(), sub.value) <toc>])))
@@ -354,7 +370,7 @@
       let subsections = query(
         selector(<subsection>).after(section-loc).before(selector(<section>).after(section-loc, inclusive: false)),
       ).dedup()
-
+      
       if subsections.len() != 0 {
         [#link(section-loc, section.value) <toc> #list(
             ..subsections.map(sub => [#link(sub.location(), sub.value) <toc>]),
@@ -364,7 +380,7 @@
       }
     })))
   }
-
+  
   pagebreak()
 }
 
@@ -377,20 +393,26 @@
 // Arguments:
 //   body: Section title/name
 //   text-size: Font size for the title (default: 42pt)
+//   back-color: Background color for the slide (default: global default)
 //
 // Returns: A full-page section title with progress divider
 #let title-slide(
   body,
   text-size: 42pt,
+  back-color: none,
 ) = context {
+  let bg-color = if back-color != none { back-color } else { default-back-color.get() }
+  
+  set page(fill: bg-color)
+  
   register-section(body)
-
+  
   show heading: text.with(size: text-size, weight: "semibold")
   set align(left + horizon)
-
+  
   [#heading(depth: 1, smallcaps(body)) #metadata(body) <section>]
   _progress-divider(color: theme-color.get())
-
+  
   pagebreak()
 }
 
@@ -400,30 +422,34 @@
 // Background uses theme color, text automatically resizes to fit
 // Progress bar (if enabled) is shown in white for contrast
 //
-// Arguments:
+// Arguments: 
 //   text-color: Color for the text (default: white)
 //   text-size: Initial font size, auto-adjusted to fit (default: 60pt)
+//   back-color: Background color for the slide (default: theme color)
 //   body: Content to be displayed
 //
 // Returns: A full-screen slide with auto-resized centered text
 #let focus-slide(
   text-color: white,
   text-size: 60pt,
+  back-color: none,
   body,
 ) = context {
+  let bg-color = if back-color != none { back-color } else { theme-color.get() }
+  
   set page(
-    fill: theme-color.get(),
+    fill: bg-color,
     foreground: _get-progress-foreground(color: white),
   )
-
+  
   set text(
     weight: "semibold",
     size: text-size,
     fill: text-color,
   )
-
+  
   set align(center + horizon)
-
+  
   _resize-text(body)
 }
 
@@ -433,23 +459,24 @@
 // Supports custom backgrounds, page numbers, and progress bar
 // Can be marked as "outlined" to appear in table of contents
 //
-// Arguments:
+// Arguments: 
 //   title: Optional slide title displayed in colored header
-//   back-color: Background color for the slide (default: white)
+//   back-color: Background color for the slide (default: global default)
 //   outlined: Whether to register this slide in TOC (default: false)
 //   body: Slide content
 //
 // Returns: A formatted content slide with header and optional progress bar
 #let slide(
   title: none,
-  back-color: white,
+  back-color: none,
   outlined: false,
   body,
 ) = context {
+  let bg-color = if back-color != none { back-color } else { default-back-color.get() }
   let page-num = _get-page-number()
-
+  
   set page(
-    fill: back-color,
+    fill: bg-color,
     header-ascent: if title != none { 65% } else { 66% },
     header: [],
     margin: if title != none {
@@ -477,7 +504,7 @@
     },
     foreground: _get-progress-foreground(),
   )
-
+  
   _apply-slide-text-styles()
   set align(horizon)
   v(0cm)
@@ -490,14 +517,20 @@
 // Useful for custom layouts or special content
 // Still supports page numbers and progress bar
 //
-// Arguments:
+// Arguments: 
+//   back-color: Background color for the slide (default: global default)
 //   body: Slide content
 //
 // Returns: A clean slide with maximum content area
-#let blank-slide(body) = context {
+#let blank-slide(
+  back-color: none,
+  body,
+) = context {
+  let bg-color = if back-color != none { back-color } else { default-back-color.get() }
   let page-num = _get-page-number()
-
+  
   set page(
+    fill: bg-color,
     background: if page-num != none {
       place(top + right, box(
         inset: (right: 0.6cm, top: 0.6cm),
@@ -510,7 +543,7 @@
     },
     foreground: _get-progress-foreground(),
   )
-
+  
   _apply-slide-text-styles()
   set align(horizon)
   body
@@ -521,15 +554,21 @@
 // Creates a bibliography/references slide
 // Displays citations from a .bib file with a progress divider
 //
-// Arguments:
+// Arguments: 
 //   bib-call: The bibliography() function call with your .bib file
 //   title: Title for the references section (default: "References")
+//   back-color: Background color for the slide (default: global default)
 //
 // Returns: A formatted bibliography slide
 #let bibliography-slide(
   bib-call,
   title: "References",
+  back-color: none,
 ) = context {
+  let bg-color = if back-color != none { back-color } else { default-back-color.get() }
+  
+  set page(fill: bg-color)
+  
   set text(size: 19pt)
   set par(justify: true)
   set bibliography(title: text(size: 30pt)[
@@ -538,6 +577,6 @@
     #_progress-divider(color: theme-color.get())
     #v(.5cm)
   ])
-
+  
   bib-call
 }
