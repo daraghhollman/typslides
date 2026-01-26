@@ -220,12 +220,13 @@
 // Returns: A centered gray block with rounded corners
 #let grayed(
   text-size: 24pt,
+  fill-color: rgb("#F3F2F0"),
   content,
 ) = {
   set align(center + horizon)
   set text(size: text-size)
   block(
-    fill: rgb("#F3F2F0"),
+    fill: fill-color,
     inset: (x: .8cm, y: .8cm),
     breakable: false,
     above: .9cm,
